@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function initWebSocket() {
     const token = authManager.getToken();
-    if (!token) return;
+    if (!token || !document.body.classList.contains('is-authenticated')) return;
 
     if (reconnectTimer) clearTimeout(reconnectTimer);
     if (ws) {
@@ -109,12 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
     ws.onclose = (event) => {
       isWsConnected = false;
       if (event && event.code === 4001) {
-        authManager.lock('Sesión expirada o no autorizada. Ingrese su contraseña nuevamente.');
+        authManager.lock('Tu sesión ha expirado. Introduce la contraseña nuevamente.');
         return;
       }
       setState('ready', 'DESCONECTADO');
       if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (authManager.getToken()) {
+      if (authManager.getToken() && document.body.classList.contains('is-authenticated')) {
         reconnectTimer = setTimeout(() => {
           reconnectDelay = Math.min(reconnectDelay * 1.5, 20000);
           initWebSocket();

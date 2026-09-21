@@ -240,7 +240,6 @@ wss.on('connection', (ws, req) => {
   if (!verifyAuthToken(token)) {
     console.warn('⛔ Conexión WebSocket denegada: Token no válido o ausente');
     try {
-      ws.send(JSON.stringify({ type: 'error', message: 'No autorizado. Se requiere contraseña de acceso.' }));
       ws.close(4001, 'Unauthorized');
     } catch (e) {}
     return;
