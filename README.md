@@ -48,63 +48,61 @@ npm run cap:open:ios
 
 ---
 
-## 🚀 Ejecución y Despliegue en Servidor (con nip.io y HTTPS)
+## 🚀 Convivencia con más servicios en tu Servidor (con nip.io y HTTPS)
 
-> [!IMPORTANT]
-> **¿Por qué nip.io y HTTPS?**
-> Para que el navegador (Chrome, Safari, iOS, Android) permita capturar el micrófono con `navigator.mediaDevices.getUserMedia()`, es **obligatorio** usar HTTPS (salvo en `localhost`). Al usar `<TU_IP>.nip.io` se obtiene un dominio válido que resuelve a tu servidor y permite generar certificados SSL gratuitos de forma automática.
+Si ya tienes otros servicios funcionando en tu servidor con `nip.io` (ej. `app.<IP>.nip.io`, `api.<IP>.nip.io`), a este asistente le asignamos el subdominio:
 
-### Opción A: Despliegue con Docker y Caddy (Recomendado - SSL Automático)
+```text
+aura.<TU_IP_PUBLICA>.nip.io
+```
 
-1. En tu servidor, clona el repositorio:
-   ```bash
-   git clone https://github.com/Akshoon/asistenteIAVOZ.git
-   cd asistenteIAVOZ
-   ```
-
-2. Configura tu archivo `.env` basándote en `.env.example`:
-   ```bash
-   cp .env.example .env
-   nano .env
-   ```
-   *(Asegúrate de colocar tu `GEMINI_API_KEY` y tu `APP_PASSWORD`)*
-
-3. Levanta los contenedores pasando tu IP pública con `nip.io`:
-   ```bash
-   DOMAIN="TU_IP_PUBLICA.nip.io" docker compose up -d
-   ```
-   *Caddy obtendrá automáticamente el certificado SSL gratuito y redirigirá HTTP a HTTPS.*
-
-4. Accede desde cualquier celular o PC a:
-   **`https://TU_IP_PUBLICA.nip.io`**
+*Cualquier subdominio antes de la IP en `nip.io` resuelve automáticamente a tu mismo servidor.*
 
 ---
 
-### Opción B: Despliegue directo con Node.js (PM2) + Nginx
+### Opción A: Despliegue con Docker (Recomendado junto a tus otros servicios)
 
-1. **Clonar e instalar dependencias:**
+1. En tu servidor, clona o actualiza el repositorio:
    ```bash
    git clone https://github.com/Akshoon/asistenteIAVOZ.git
    cd asistenteIAVOZ
-   npm install --omit=dev
+   ```
+
+2. Configura tu `.env`:
+   ```bash
    cp .env.example .env
    nano .env
    ```
+   *Si el puerto 3000 ya lo usa otro de tus contenedores, puedes definir `AURA_PORT=3005` (o el que tengas libre).*
 
-2. **Iniciar el servidor con PM2:**
+3. Levanta el contenedor:
    ```bash
-   npm install -g pm2
-   pm2 start server/index.js --name aura-voice
-   pm2 save
+   docker compose up -d --build
+   ```
+   *Esto iniciará el contenedor `aura-voice-app` escuchando internamente en `127.0.0.1:3000` (o el `AURA_PORT` que hayas elegido).*
+
+4. **Conéctalo a tu Nginx o Proxy inverso existente:**
+   Agrega una configuración de servidor virtual para `aura.<TU_IP>.nip.io` (ver siguiente sección).
+
+---
+
+### Opción B: Integración en tu Nginx existente
+
+Si ya tienes Nginx como proxy inverso para tus otros servicios:
+
+1. **Crea la configuración para Aura:**
+   ```bash
+   sudo nano /etc/nginx/sites-available/aura
    ```
 
-3. **Configuración de Nginx (`/etc/nginx/sites-available/aura`):**
+2. **Pega la configuración apuntando al subdominio `aura.<TU_IP>.nip.io`:**
    ```nginx
    server {
-       server_name TU_IP_PUBLICA.nip.io;
+       server_name aura.TU_IP_PUBLICA.nip.io;
 
        location / {
-           proxy_pass http://localhost:3000;
+           # Cambia 3000 si usaste otro AURA_PORT
+           proxy_pass http://127.0.0.1:3000;
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection "upgrade";
@@ -113,20 +111,22 @@ npm run cap:open:ios
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
 
-           # Tiempos de espera para sesiones de voz prolongadas
+           # Tiempos de espera para sesiones de audio en tiempo real
            proxy_read_timeout 86400s;
            proxy_send_timeout 86400s;
        }
    }
    ```
 
-4. **Habilitar sitio y generar SSL con Certbot:**
+3. **Habilita el sitio y genera el certificado SSL con Certbot:**
    ```bash
    sudo ln -s /etc/nginx/sites-available/aura /etc/nginx/sites-enabled/
    sudo nginx -t && sudo systemctl reload nginx
-   sudo certbot --nginx -d TU_IP_PUBLICA.nip.io
+   sudo certbot --nginx -d aura.TU_IP_PUBLICA.nip.io
    ```
 
-5. **Acceso:**
-   **`https://TU_IP_PUBLICA.nip.io`**
+4. **Listo para usar:**
+   Ingresa desde cualquier navegador a:
+   **`https://aura.TU_IP_PUBLICA.nip.io`**
+
 
