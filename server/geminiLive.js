@@ -12,16 +12,40 @@ class GeminiLiveBridge {
     this.geminiWs = null;
     this.isSetupComplete = false;
     this.sessionActive = false;
+    this.isConnecting = false;
+    this.reconnectTimer = null;
+    this.pendingAudioQueue = [];
+    this.pendingText = null;
   }
 
   connect() {
+    if (this.isConnecting || (this.geminiWs && this.geminiWs.readyState === WebSocket.OPEN)) {
+      return;
+    }
+    this.isConnecting = true;
+    this.isSetupComplete = false;
+
+    if (!this.apiKey) {
+      console.error('❌ GEMINI_API_KEY no configurada');
+      this.isConnecting = false;
+      this.sendToClient({ type: 'error', message: 'API Key de Gemini no configurada en el servidor.' });
+      return;
+    }
+
     const host = 'generativelanguage.googleapis.com';
     const uri = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${this.apiKey}`;
 
-    this.geminiWs = new WebSocket(uri);
+    try {
+      this.geminiWs = new WebSocket(uri);
+    } catch (err) {
+      console.error('❌ Error instanciando WebSocket hacia Gemini Live:', err.message);
+      this.isConnecting = false;
+      return;
+    }
 
     this.geminiWs.on('open', () => {
       console.log('🔗 Conectado a Gemini Live API WebSocket');
+      this.isConnecting = false;
       this.sendSetup();
     });
 
@@ -31,17 +55,30 @@ class GeminiLiveBridge {
 
     this.geminiWs.on('error', (err) => {
       console.error('❌ Error en WebSocket de Gemini Live:', err.message);
-      this.sendToClient({ type: 'error', message: 'Error de conexión con Gemini Live: ' + err.message });
+      this.isConnecting = false;
     });
 
     this.geminiWs.on('close', (code, reason) => {
       const reasonStr = reason ? reason.toString() : '';
       console.log(`🔌 Conexión con Gemini Live cerrada: ${code} - ${reasonStr}`);
       this.sessionActive = false;
-      if (code === 1011 && reasonStr.includes('quota')) {
-        this.sendToClient({ type: 'error', message: 'Límite de conexiones concurrentes alcanzado momentáneamente. Reintentando en unos segundos...' });
-      } else {
-        this.sendToClient({ type: 'session_closed', code, reason: reasonStr });
+      this.isSetupComplete = false;
+      this.isConnecting = false;
+      this.geminiWs = null;
+
+      // Informar al cliente que la sesión se renueva
+      this.sendToClient({ type: 'session_closed', code, reason: reasonStr });
+
+      // Si el cliente web sigue conectado, reconectar automáticamente
+      if (this.clientWs && this.clientWs.readyState === WebSocket.OPEN) {
+        const delay = (code === 1011) ? 3000 : 1000;
+        console.log(`🔄 Reestableciendo enlace con Gemini Live en ${delay}ms...`);
+        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = setTimeout(() => {
+          if (this.clientWs && this.clientWs.readyState === WebSocket.OPEN) {
+            this.connect();
+          }
+        }, delay);
       }
     });
   }
@@ -194,8 +231,23 @@ REGLAS DE INTERACCIÓN Y VISUALIZACIÓN:
       if (resp.setupComplete) {
         this.isSetupComplete = true;
         this.sessionActive = true;
+        this.isConnecting = false;
         console.log('✅ Sesión Gemini Live lista!');
         this.sendToClient({ type: 'ready', model: this.model, voice: this.voice });
+
+        if (this.pendingText) {
+          const text = this.pendingText;
+          this.pendingText = null;
+          this.sendText(text);
+        }
+
+        if (this.pendingAudioQueue.length > 0) {
+          console.log(`🎙️ Transmitiendo ${this.pendingAudioQueue.length} fragmentos de audio encolados a Gemini`);
+          for (const chunk of this.pendingAudioQueue) {
+            this.sendAudioChunk(chunk);
+          }
+          this.pendingAudioQueue = [];
+        }
         return;
       }
 
@@ -284,39 +336,65 @@ REGLAS DE INTERACCIÓN Y VISUALIZACIÓN:
       const data = typeof message === 'string' ? JSON.parse(message) : JSON.parse(message.toString());
 
       if (data.type === 'audio_chunk' && data.pcm) {
-        // Enviar fragmento de audio PCM (16kHz) a Gemini Live
         if (this.geminiWs && this.geminiWs.readyState === WebSocket.OPEN && this.isSetupComplete) {
-          this.geminiWs.send(JSON.stringify({
-            realtimeInput: {
-              mediaChunks: [
-                {
-                  mimeType: 'audio/pcm;rate=16000',
-                  data: data.pcm
-                }
-              ]
-            }
-          }));
+          this.sendAudioChunk(data.pcm);
+        } else {
+          this.pendingAudioQueue.push(data.pcm);
+          if (this.pendingAudioQueue.length > 25) {
+            this.pendingAudioQueue.shift();
+          }
+          if (!this.isConnecting && (!this.geminiWs || this.geminiWs.readyState !== WebSocket.OPEN)) {
+            this.connect();
+          }
         }
       } else if (data.type === 'text_prompt' && data.text) {
-        // Enviar mensaje de texto directamente
         if (this.geminiWs && this.geminiWs.readyState === WebSocket.OPEN && this.isSetupComplete) {
-          this.geminiWs.send(JSON.stringify({
-            clientContent: {
-              turns: [
-                {
-                  role: 'user',
-                  parts: [{ text: data.text }]
-                }
-              ],
-              turnComplete: true
-            }
-          }));
+          this.sendText(data.text);
+        } else {
+          this.pendingText = data.text;
+          if (!this.isConnecting && (!this.geminiWs || this.geminiWs.readyState !== WebSocket.OPEN)) {
+            this.connect();
+          }
         }
       } else if (data.type === 'update_voice') {
         this.voice = data.voice || this.voice;
+        if (this.geminiWs) {
+          try { this.geminiWs.close(); } catch {}
+        }
       }
     } catch (err) {
       console.error('Error procesando mensaje del cliente:', err);
+    }
+  }
+
+  sendAudioChunk(pcm) {
+    if (this.geminiWs && this.geminiWs.readyState === WebSocket.OPEN && this.isSetupComplete) {
+      this.geminiWs.send(JSON.stringify({
+        realtimeInput: {
+          mediaChunks: [
+            {
+              mimeType: 'audio/pcm;rate=16000',
+              data: pcm
+            }
+          ]
+        }
+      }));
+    }
+  }
+
+  sendText(text) {
+    if (this.geminiWs && this.geminiWs.readyState === WebSocket.OPEN && this.isSetupComplete) {
+      this.geminiWs.send(JSON.stringify({
+        clientContent: {
+          turns: [
+            {
+              role: 'user',
+              parts: [{ text: text }]
+            }
+          ],
+          turnComplete: true
+        }
+      }));
     }
   }
 
@@ -327,6 +405,15 @@ REGLAS DE INTERACCIÓN Y VISUALIZACIÓN:
   }
 
   close() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.sessionActive = false;
+    this.isSetupComplete = false;
+    this.isConnecting = false;
+    this.pendingAudioQueue = [];
+    this.pendingText = null;
     if (this.geminiWs) {
       try {
         this.geminiWs.close();

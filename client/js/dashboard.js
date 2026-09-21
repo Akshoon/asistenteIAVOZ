@@ -17,6 +17,7 @@ class DashboardController {
     
     this.chartCanvas = document.getElementById('main-chart-canvas');
     this.chartCard = document.getElementById('chart-card');
+    this.emptyState = document.getElementById('dashboard-empty-state');
     this.kpiContainer = document.getElementById('kpi-container');
     this.kpiGrid = document.getElementById('kpi-cards-grid');
     this.kpiTitle = document.getElementById('kpi-section-title');
@@ -28,6 +29,13 @@ class DashboardController {
 
     this.chartInstance = null;
     this.initEvents();
+  }
+
+  hideAllSections() {
+    if (this.emptyState) this.emptyState.classList.add('hidden');
+    if (this.chartCard) this.chartCard.classList.add('hidden');
+    if (this.kpiContainer) this.kpiContainer.classList.add('hidden');
+    if (this.tableContainer) this.tableContainer.classList.add('hidden');
   }
 
   initEvents() {
@@ -90,6 +98,7 @@ class DashboardController {
     this.explanationEl.textContent = args.description || 'Análisis computado a partir de los datos tabulares activos.';
     this.explanationEl.style.display = args.description ? 'block' : 'none';
 
+    this.hideAllSections();
     this.chartCard.classList.remove('hidden');
 
     // Paleta ejecutiva sobria: Ice Steel, Indigo, Slate, Mint, Amber
@@ -203,6 +212,7 @@ class DashboardController {
       this.kpiTitle.textContent = args.title;
     }
 
+    this.hideAllSections();
     this.kpiContainer.classList.remove('hidden');
     this.kpiGrid.innerHTML = '';
 
@@ -236,6 +246,7 @@ class DashboardController {
       this.tableTitle.textContent = args.title;
     }
 
+    this.hideAllSections();
     this.tableContainer.classList.remove('hidden');
 
     this.tableHead.innerHTML = '';

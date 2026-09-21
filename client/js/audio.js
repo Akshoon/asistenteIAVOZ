@@ -41,8 +41,8 @@ class AudioManager {
 
   async startRecording() {
     await this.init();
-    if (this.outputAudioCtx.state === 'suspended') {
-      await this.outputAudioCtx.resume();
+    if (this.outputAudioCtx && this.outputAudioCtx.state === 'suspended') {
+      try { await this.outputAudioCtx.resume(); } catch {}
     }
 
     try {
@@ -58,6 +58,9 @@ class AudioManager {
       this.inputAudioCtx = new (window.AudioContext || window.webkitAudioContext)({
         sampleRate: 16000
       });
+      if (this.inputAudioCtx.state === 'suspended') {
+        try { await this.inputAudioCtx.resume(); } catch {}
+      }
 
       const source = this.inputAudioCtx.createMediaStreamSource(this.micStream);
       
@@ -102,6 +105,7 @@ class AudioManager {
       console.log('🎤 Micrófono activo (PCM 16kHz)');
     } catch (err) {
       console.error('Error al iniciar micrófono:', err);
+      this.stopRecording();
       throw err;
     }
   }
@@ -109,15 +113,17 @@ class AudioManager {
   stopRecording() {
     this.isRecording = false;
     if (this.processor) {
-      this.processor.disconnect();
+      try { this.processor.disconnect(); } catch {}
       this.processor = null;
     }
     if (this.micStream) {
-      this.micStream.getTracks().forEach(t => t.stop());
+      try {
+        this.micStream.getTracks().forEach(t => t.stop());
+      } catch {}
       this.micStream = null;
     }
     if (this.inputAudioCtx) {
-      this.inputAudioCtx.close();
+      try { this.inputAudioCtx.close(); } catch {}
       this.inputAudioCtx = null;
     }
     console.log('🎤 Micrófono detenido');

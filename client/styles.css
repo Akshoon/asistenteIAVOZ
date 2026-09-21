@@ -607,6 +607,35 @@ body::before {
   padding: 20px;
 }
 
+.empty-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  text-align: center;
+}
+
+.empty-state-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+.empty-state-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.empty-state-desc {
+  font-size: 0.78rem;
+  max-width: 280px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 .chart-wrapper {
   position: relative;
   width: 100%;

@@ -94,7 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ws.onopen = () => {
       isWsConnected = true;
       reconnectDelay = 4000;
-      setState('ready');
+      if (audioManager.isRecording) {
+        setState('listening');
+      } else {
+        setState('ready');
+      }
     };
 
     ws.onmessage = (event) => {
@@ -111,6 +115,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (event && event.code === 4001) {
         authManager.lock('Tu sesión ha expirado. Introduce la contraseña nuevamente.');
         return;
+      }
+      if (audioManager.isRecording) {
+        audioManager.stopRecording();
       }
       setState('ready', 'DESCONECTADO');
       if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -130,8 +137,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleServerMessage(data) {
     switch (data.type) {
       case 'ready':
-        setState('ready');
-        setSubtitle('Aura', 'Canal de voz activo. Puede formular su consulta analítica.');
+        if (audioManager.isRecording) {
+          setState('listening');
+          setSubtitle('Aura', 'Canal de voz activo. Te escucho...');
+        } else {
+          setState('ready');
+          setSubtitle('Aura', 'Canal de voz activo. Puede formular su consulta analítica.');
+        }
+        break;
+
+      case 'session_closed':
+        console.warn('⚠️ Sesión de audio reconectando en segundo plano...');
+        if (audioManager.isRecording) {
+          setSubtitle('Aura', 'Reanudando enlace de voz...');
+        }
         break;
 
       case 'audio':
@@ -146,7 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       case 'interrupted':
         audioManager.stopAllPlayback();
-        setState('listening');
+        if (audioManager.isRecording) {
+          setState('listening');
+        }
         break;
 
       case 'render_tool':
@@ -155,6 +176,13 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
 
       case 'turn_complete':
+        if (!audioManager.isPlaying) {
+          if (audioManager.isRecording) {
+            setState('listening');
+          } else {
+            setState('ready');
+          }
+        }
         break;
 
       case 'error':
@@ -209,6 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusLabel) statusLabel.textContent = customLabel || 'FALLA DE ENLACE';
         voiceControlBtn.classList.remove('is-active');
         voiceHintLabel.textContent = 'Reconectando con el servidor...';
+        if (audioManager.isRecording) {
+          audioManager.stopRecording();
+        }
         break;
 
       case 'ready':
@@ -217,6 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusLabel) statusLabel.textContent = customLabel || 'SISTEMA LISTO';
         voiceControlBtn.classList.remove('is-active');
         voiceHintLabel.textContent = 'Iniciar consulta por voz';
+        if (audioManager.isRecording) {
+          audioManager.stopRecording();
+        }
         break;
     }
   }
@@ -231,12 +265,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audioManager.isRecording) {
       audioManager.stopRecording();
       setState('ready');
+      setSubtitle('Sistema', 'Micrófono en pausa. Pulsa para reanudar.');
     } else {
       try {
-        setState('listening');
         await audioManager.startRecording();
+        setState('listening');
         setSubtitle('Usuario', 'Transmitiendo audio...');
       } catch (err) {
+        console.error('Error al activar micrófono:', err);
         alert('Se requiere autorización para utilizar el dispositivo de audio.');
         setState('ready');
       }
@@ -273,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function sendTextPrompt(text) {
+    audioManager.init();
     setSubtitle('Usuario', text);
     setState('analyzing');
     if (ws && ws.readyState === WebSocket.OPEN) {
