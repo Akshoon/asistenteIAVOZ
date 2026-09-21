@@ -1,0 +1,21 @@
+{
+  "appId": "com.aura.analytics",
+  "appName": "Aura Analytics",
+  "webDir": "client",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1500,
+      "backgroundColor": "#090a0d",
+      "showSpinner": false
+    }
+  }
+}

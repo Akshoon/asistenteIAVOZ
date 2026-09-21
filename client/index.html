@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Aura</title>
+  
+  <!-- PWA & Mobile Installability (iOS & Android) -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#090a0d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Aura">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- CDN Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body class="theme-dark">
+  <!-- Auth Security Gate / Pantalla de Bloqueo Ejecutiva -->
+  <div id="auth-lock-screen" class="auth-lock-screen" role="dialog" aria-modal="true" aria-label="Control de Acceso de Seguridad">
+    <div class="auth-card">
+      <div class="auth-brand-badge">
+        <div class="brand-symbol large">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="authApertureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#38bdf8"/>
+                <stop offset="50%" stop-color="#0284c7"/>
+                <stop offset="100%" stop-color="#818cf8"/>
+              </linearGradient>
+            </defs>
+            <path d="M16 3.5L27.5 25H21.5L16 13.8L10.5 25H4.5L16 3.5Z" fill="url(#authApertureGrad)"/>
+            <circle cx="16" cy="18.5" r="2.4" fill="#090a0d"/>
+            <circle cx="16" cy="18.5" r="1.3" fill="#38bdf8"/>
+          </svg>
+        </div>
+      </div>
+
+      <div class="auth-header">
+        <h2 class="auth-title">AURA ANALYTICS</h2>
+        <div class="auth-security-pill">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>ACCESO RESTRINGIDO</span>
+        </div>
+        <p class="auth-subtitle">Terminal de inteligencia ejecutiva protegida. Ingrese la contraseña de seguridad para iniciar sesión.</p>
+      </div>
+
+      <form id="auth-password-form" class="auth-form" autocomplete="off">
+        <div class="auth-input-container">
+          <div class="auth-input-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <input 
+            type="password" 
+            id="auth-password-input" 
+            class="auth-input" 
+            placeholder="Ingrese la contraseña..." 
+            autocomplete="current-password"
+            required
+            autofocus
+          />
+          <button type="button" id="auth-toggle-visibility" class="auth-toggle-btn" aria-label="Mostrar contraseña" title="Mostrar/Ocultar contraseña">
+            <svg class="icon-eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <svg class="icon-eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+              <line x1="1" y1="1" x2="23" y2="23"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div id="auth-error-msg" class="auth-error-banner hidden" role="alert"></div>
+
+        <div class="auth-options">
+          <label class="auth-remember-label">
+            <input type="checkbox" id="auth-remember-checkbox" checked />
+            <span class="custom-checkbox-indicator"></span>
+            <span>Recordar sesión en este dispositivo</span>
+          </label>
+        </div>
+
+        <button type="submit" id="auth-submit-btn" class="auth-submit-btn">
+          <span class="btn-spinner hidden"></span>
+          <span class="btn-label">Desbloquear Terminal</span>
+          <svg class="btn-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        <span class="auth-status-dot"></span>
+        <span>Cifrado de Sesión Activo • Motor BiDi Conectado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3D Canvas Background (Minimalist Geometric Orb) -->
+  <canvas id="orb-canvas"></canvas>
+
+  <!-- Top Navigation Bar -->
+  <header class="top-nav">
+    <div class="nav-brand">
+      <div class="brand-symbol" title="Aura">
+        <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="auraApertureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#38bdf8"/>
+              <stop offset="50%" stop-color="#0284c7"/>
+              <stop offset="100%" stop-color="#818cf8"/>
+            </linearGradient>
+          </defs>
+          <!-- Modern Monolithic A-Aperture Emblem -->
+          <path d="M16 3.5L27.5 25H21.5L16 13.8L10.5 25H4.5L16 3.5Z" fill="url(#auraApertureGrad)"/>
+          <circle cx="16" cy="18.5" r="2.4" fill="#090a0d"/>
+          <circle cx="16" cy="18.5" r="1.3" fill="#38bdf8"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">AURA</span>
+      </div>
+    </div>
+
+    <!-- Nav Actions -->
+    <div class="nav-actions">
+      <button class="nav-btn icon-btn-nav" id="btn-lock-session" title="Bloquear Terminal / Cerrar Sesión" aria-label="Bloquear Terminal">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </button>
+      <button class="nav-btn icon-btn-nav" id="btn-open-settings" title="Configuración y Datasets" aria-label="Abrir Configuración y Datasets">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Central Interaction Hub -->
+  <main class="voice-center">
+    <!-- Clickable Interactive Target -->
+    <div class="orb-interaction-zone" id="orb-tap-area" role="button" aria-label="Activar sesión de voz">
+      <div class="stealth-ring"></div>
+      <div class="stealth-ring inner"></div>
+    </div>
+
+    <!-- Executive Voice Trigger Bar -->
+    <div class="voice-trigger-pill" id="voice-control-btn">
+      <div class="mic-indicator">
+        <svg class="mic-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          <line x1="12" y1="19" x2="12" y2="23"></line>
+          <line x1="8" y1="23" x2="16" y2="23"></line>
+        </svg>
+      </div>
+      <span class="trigger-label" id="voice-hint-label">Iniciar consulta por voz</span>
+      <div class="frequency-bars" id="audio-wave-bars">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Professional Prompt Suggestions (No emojis) -->
+    <div class="prompt-suggestions">
+      <button class="prompt-chip" data-prompt="Muestra el desglose de ventas por región en un gráfico de barras comparativo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        <span>Ventas por región</span>
+      </button>
+      <button class="prompt-chip" data-prompt="Resume los indicadores financieros clave y KPIs principales del periodo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        <span>Resumen ejecutivo de KPIs</span>
+      </button>
+      <button class="prompt-chip" data-prompt="Genera una comparativa entre la categoría Electrónica y Ropa a lo largo del tiempo">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span>Comparativa Electrónica vs Ropa</span>
+      </button>
+      <button class="prompt-chip" data-prompt="Despliega la tabla analítica completa con las métricas detalladas">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+        <span>Tabla de registros</span>
+      </button>
+    </div>
+  </main>
+
+  <!-- Bottom Captions & Terminal Input -->
+  <div class="bottom-console-bar">
+    <div class="transcript-box" id="subtitles-bubble">
+      <div class="transcript-meta">
+        <span class="transcript-role" id="subtitles-speaker">Aura:</span>
+        <span class="transcript-content" id="subtitles-text">Canal de voz activo. Presione la barra espaciadora o el indicador central para formular su consulta.</span>
+      </div>
+    </div>
+
+    <!-- Clean Terminal Input Form -->
+    <form class="terminal-input-form" id="quick-text-form">
+      <div class="terminal-prefix">&gt;</div>
+      <input type="text" id="text-prompt-input" class="terminal-input" placeholder="Escriba una instrucción analítica o presione espacio para hablar...">
+      <button type="submit" class="terminal-btn-submit" title="Ejecutar instrucción">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </form>
+  </div>
+
+  <!-- EXECUTIVE SLIDE-IN DASHBOARD (Dark / Matte Obsidian) -->
+  <aside class="dashboard-overlay hidden" id="dashboard-overlay">
+    <div class="dashboard-backdrop" id="dashboard-backdrop"></div>
+    
+    <div class="dashboard-panel">
+      <!-- Mobile Bottom Sheet Handle -->
+      <div class="mobile-sheet-drag-handle"></div>
+
+      <!-- Header -->
+      <header class="dashboard-header">
+        <div class="header-left">
+          <div class="viz-type-badge" id="dashboard-viz-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+          </div>
+          <div>
+            <h2 class="dashboard-title" id="dashboard-title">Panel Analítico</h2>
+            <p class="dashboard-subtitle" id="dashboard-subtitle">Generado mediante inferencia analítica</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span class="timestamp-badge" id="dashboard-timestamp">--:--</span>
+          <button class="header-tool-btn" id="btn-export-chart" title="Exportar PNG">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </button>
+          <button class="header-tool-btn btn-close-dash" id="btn-close-dashboard" title="Cerrar Panel">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Content Area -->
+      <div class="dashboard-content" id="dashboard-content">
+        <!-- Chart Canvas Container -->
+        <div class="panel-section chart-section" id="chart-card">
+          <div class="chart-wrapper">
+            <canvas id="main-chart-canvas"></canvas>
+          </div>
+          <div class="viz-analysis-box" id="chart-explanation"></div>
+        </div>
+
+        <!-- KPI Cards Grid Container -->
+        <div class="panel-section kpi-section hidden" id="kpi-container">
+          <div class="section-header-bar">
+            <h3 class="section-title" id="kpi-section-title">Indicadores Clave de Rendimiento</h3>
+          </div>
+          <div class="kpi-cards-grid" id="kpi-cards-grid"></div>
+        </div>
+
+        <!-- Data Table Container -->
+        <div class="panel-section table-section hidden" id="table-container">
+          <div class="section-header-bar">
+            <h3 class="section-title" id="table-section-title">Estructura Tabular Detallada</h3>
+          </div>
+          <div class="table-responsive">
+            <table class="corporate-table" id="data-table">
+              <thead id="data-table-head"></thead>
+              <tbody id="data-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONFIGURATION & DATA MANAGEMENT MODAL -->
+  <div class="modal-overlay hidden" id="settings-modal">
+    <div class="modal-dialog settings-dialog">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-header-title">
+          <div class="modal-icon-badge">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <h3>Centro de Control</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-settings" title="Cerrar ventana">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Segmented Control Tabs -->
+      <nav class="modal-tabs-bar">
+        <button class="modal-tab-pill is-active" data-tab="tab-datasets" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          <span>Datasets y Archivos</span>
+        </button>
+        <button class="modal-tab-pill" data-tab="tab-dashboard" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="9" y1="21" x2="9" y2="9"></line>
+          </svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="modal-tab-pill" data-tab="tab-settings" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+          </svg>
+          <span>Voz e IA</span>
+        </button>
+        <button class="modal-tab-pill" data-tab="tab-pwa" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+          </svg>
+          <span>App Móvil</span>
+        </button>
+      </nav>
+
+      <!-- Modal Body (Tab Panes) -->
+      <div class="modal-body settings-body">
+        <!-- TAB 1: Datasets y Selección de Archivos (Completo, prominente y scrollable) -->
+        <div class="modal-tab-pane is-active" id="tab-datasets">
+          <!-- Active Dataset Status Banner -->
+          <div class="active-dataset-banner">
+            <div class="dataset-status-info">
+              <span class="banner-tag">ESTADO ACTUAL</span>
+              <span class="banner-name" id="active-dataset-name">Ningún dataset seleccionado</span>
+            </div>
+            <button class="btn-clear-dataset hidden" id="btn-clear-dataset" type="button" title="Desvincular dataset actual">
+              Deseleccionar
+            </button>
+          </div>
+
+          <!-- Hero Upload Dropzone -->
+          <div class="upload-dropzone-hero" id="file-dropzone">
+            <input type="file" id="file-input" accept=".csv,.xlsx,.xls,.json" hidden>
+            <div class="upload-hero-icon">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            <div class="upload-hero-body">
+              <h4 class="dropzone-primary">Cargar nuevo archivo de datos</h4>
+              <p class="dropzone-secondary">Arrastre su archivo aquí o pulse el botón para examinar su dispositivo</p>
+              <button class="btn-browse-trigger" type="button" id="btn-browse-trigger">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span>Examinar archivos en este equipo</span>
+              </button>
+              <span class="formats-pill">Formatos compatibles: CSV • Excel (.xlsx, .xls) • JSON</span>
+            </div>
+          </div>
+
+          <!-- Datasets Listing -->
+          <div class="datasets-repository">
+            <div class="repository-header">
+              <span class="repo-title">Datasets Registrados (<span id="files-badge-count">0</span>)</span>
+              <span class="repo-subtitle">Haga clic en cualquiera para vincularlo a Aura</span>
+            </div>
+            <div class="datasets-list" id="datasets-list"></div>
+          </div>
+        </div>
+
+        <!-- TAB 2: Dashboard -->
+        <div class="modal-tab-pane" id="tab-dashboard">
+          <div class="tab-card-content">
+            <div class="card-icon-big">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+              </svg>
+            </div>
+            <h4>Panel de Visualización Analítica (HUD)</h4>
+            <p class="card-desc">Aura proyecta automáticamente gráficos interactivos, indicadores de rendimiento (KPIs) y tablas al formular consultas analíticas. También puede abrir o cerrar el panel en cualquier instante.</p>
+            <button class="action-outline-btn primary-glow-btn" id="btn-toggle-dashboard-modal" type="button">
+              <span>Abrir Panel Analítico</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 3: Voz e Infraestructura de IA -->
+        <div class="modal-tab-pane" id="tab-settings">
+          <div class="config-row">
+            <label class="config-label" for="voice-select">Perfil de Voz Neuronal</label>
+            <select id="voice-select" class="corporate-select">
+              <option value="Aoede" selected>Aoede — Tono ejecutivo neutral (Recomendado)</option>
+              <option value="Kore">Kore — Directa y precisa</option>
+              <option value="Charon">Charon — Tono sobrio y calmado</option>
+              <option value="Fenrir">Fenrir — Firme e institucional</option>
+              <option value="Puck">Puck — Tono conversacional moderado</option>
+            </select>
+          </div>
+
+          <div class="system-spec-card">
+            <div class="spec-indicator"></div>
+            <div class="spec-details">
+              <span class="spec-name">Gemini 2.5 Flash Native Audio Dialog</span>
+              <span class="spec-desc">Protocolo WebSocket BidiGenerateContent • Latencia &lt;280ms • Cuota Ilimitada</span>
+            </div>
+          </div>
+
+          <div class="config-row" style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+            <div>
+              <div class="config-label" style="margin-bottom: 2px;">Seguridad de la Terminal</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Bloquear la sesión de análisis en este dispositivo</div>
+            </div>
+            <button type="button" class="action-outline-btn" id="btn-lock-session-modal" style="padding: 8px 14px; font-size: 0.82rem; border-color: rgba(244, 63, 94, 0.4); color: var(--accent-rose);">
+              <span>Bloquear Terminal</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 4: Aplicación Móvil e Instalación (PWA) -->
+        <div class="modal-tab-pane" id="tab-pwa">
+          <div class="pwa-install-box">
+            <h4>Aplicación Móvil Instalable</h4>
+            <p class="pwa-desc">Instale Aura en su teléfono móvil o tableta para disfrutar de una experiencia fluida a pantalla completa sin barras de navegación.</p>
+            <button class="pwa-install-btn hidden" id="btn-install-pwa" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Instalar Aura en este Dispositivo</span>
+            </button>
+            <div class="ios-install-hint" id="ios-install-hint">
+              <span class="hint-title">En iPhone / iPad (Safari):</span>
+              <span class="hint-text">Pulse el botón de compartir del navegador (icono <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="15" x2="12" y2="15"/></svg>) y seleccione <strong>"Agregar al inicio"</strong>.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/pwa.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/orb.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/files.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

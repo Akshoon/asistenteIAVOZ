@@ -1,0 +1,28 @@
+{
+  "name": "asistenteiavoz",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "cap:add:android": "npx @capacitor/cli add android",
+    "cap:add:ios": "npx @capacitor/cli add ios",
+    "cap:sync": "npx @capacitor/cli sync",
+    "cap:open:android": "npx @capacitor/cli open android",
+    "cap:open:ios": "npx @capacitor/cli open ios"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "csv-parse": "^7.0.2",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "multer": "^2.4.0",
+    "ws": "^8.21.3",
+    "xlsx": "^0.18.5"
+  }
+}

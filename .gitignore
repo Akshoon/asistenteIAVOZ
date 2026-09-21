@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables & secrets (CRITICAL)
+.env
+.env*.local
+.env.production
+.env.development
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Server uploaded datasets & dynamic uploads
+server/uploads/*
+!server/uploads/.gitkeep
+!server/uploads/samples/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Mobile / Build artifacts
+dist/
+build/
+android/
+ios/
+.capacitor/
