@@ -48,11 +48,85 @@ npm run cap:open:ios
 
 ---
 
-## 🚀 Ejecución del Servidor
+## 🚀 Ejecución y Despliegue en Servidor (con nip.io y HTTPS)
 
-```bash
-npm start
-```
+> [!IMPORTANT]
+> **¿Por qué nip.io y HTTPS?**
+> Para que el navegador (Chrome, Safari, iOS, Android) permita capturar el micrófono con `navigator.mediaDevices.getUserMedia()`, es **obligatorio** usar HTTPS (salvo en `localhost`). Al usar `<TU_IP>.nip.io` se obtiene un dominio válido que resuelve a tu servidor y permite generar certificados SSL gratuitos de forma automática.
 
-Acceso:
-**http://localhost:3000**
+### Opción A: Despliegue con Docker y Caddy (Recomendado - SSL Automático)
+
+1. En tu servidor, clona el repositorio:
+   ```bash
+   git clone https://github.com/Akshoon/asistenteIAVOZ.git
+   cd asistenteIAVOZ
+   ```
+
+2. Configura tu archivo `.env` basándote en `.env.example`:
+   ```bash
+   cp .env.example .env
+   nano .env
+   ```
+   *(Asegúrate de colocar tu `GEMINI_API_KEY` y tu `APP_PASSWORD`)*
+
+3. Levanta los contenedores pasando tu IP pública con `nip.io`:
+   ```bash
+   DOMAIN="TU_IP_PUBLICA.nip.io" docker compose up -d
+   ```
+   *Caddy obtendrá automáticamente el certificado SSL gratuito y redirigirá HTTP a HTTPS.*
+
+4. Accede desde cualquier celular o PC a:
+   **`https://TU_IP_PUBLICA.nip.io`**
+
+---
+
+### Opción B: Despliegue directo con Node.js (PM2) + Nginx
+
+1. **Clonar e instalar dependencias:**
+   ```bash
+   git clone https://github.com/Akshoon/asistenteIAVOZ.git
+   cd asistenteIAVOZ
+   npm install --omit=dev
+   cp .env.example .env
+   nano .env
+   ```
+
+2. **Iniciar el servidor con PM2:**
+   ```bash
+   npm install -g pm2
+   pm2 start server/index.js --name aura-voice
+   pm2 save
+   ```
+
+3. **Configuración de Nginx (`/etc/nginx/sites-available/aura`):**
+   ```nginx
+   server {
+       server_name TU_IP_PUBLICA.nip.io;
+
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection "upgrade";
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+
+           # Tiempos de espera para sesiones de voz prolongadas
+           proxy_read_timeout 86400s;
+           proxy_send_timeout 86400s;
+       }
+   }
+   ```
+
+4. **Habilitar sitio y generar SSL con Certbot:**
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/aura /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   sudo certbot --nginx -d TU_IP_PUBLICA.nip.io
+   ```
+
+5. **Acceso:**
+   **`https://TU_IP_PUBLICA.nip.io`**
+
