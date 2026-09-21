@@ -52,7 +52,7 @@ class AuthManager {
     if (this.lockBtn) {
       this.lockBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        this.lock('Terminal bloqueada correctamente.');
+        this.lock('Has cerrado sesión.');
       });
     }
 
@@ -87,7 +87,7 @@ class AuthManager {
   async submitPassword() {
     const password = this.passwordInput ? this.passwordInput.value.trim() : '';
     if (!password) {
-      this.showError('Por favor ingrese la contraseña de acceso.');
+      this.showError('Por favor introduce tu contraseña.');
       if (this.passwordInput) this.passwordInput.focus();
       return;
     }
@@ -121,7 +121,7 @@ class AuthManager {
           this.onAuthenticated(this.token);
         }
       } else {
-        this.showError(data.error || 'Contraseña incorrecta. Intente nuevamente.');
+        this.showError(data.error || 'Contraseña incorrecta. Inténtalo de nuevo.');
         this.shakeCard();
         if (this.passwordInput) {
           this.passwordInput.select();
@@ -130,7 +130,7 @@ class AuthManager {
       }
     } catch (err) {
       console.error('[AURA AUTH] Error en solicitud de login:', err);
-      this.showError('Error de enlace con el servidor de autenticación.');
+      this.showError('Error de conexión con el servidor.');
     } finally {
       this.setLoading(false);
     }
@@ -197,7 +197,7 @@ class AuthManager {
 
     const res = await fetch(url, options);
     if (res.status === 401) {
-      this.lock('Su sesión ha caducado. Ingrese la contraseña nuevamente.');
+      this.lock('Tu sesión ha expirado. Introduce la contraseña nuevamente.');
     }
     return res;
   }
@@ -229,7 +229,7 @@ class AuthManager {
     this.submitBtn.disabled = isLoading;
     const btnLabel = this.submitBtn.querySelector('.btn-label');
     const spinner = this.submitBtn.querySelector('.btn-spinner');
-    if (btnLabel) btnLabel.textContent = isLoading ? 'Verificando clave...' : 'Desbloquear Terminal';
+    if (btnLabel) btnLabel.textContent = isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión';
     if (spinner) spinner.classList.toggle('hidden', !isLoading);
   }
 }

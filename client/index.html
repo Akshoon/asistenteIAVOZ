@@ -29,12 +29,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 </head>
 <body class="theme-dark">
-  <!-- Auth Security Gate / Pantalla de Bloqueo Ejecutiva -->
-  <div id="auth-lock-screen" class="auth-lock-screen" role="dialog" aria-modal="true" aria-label="Control de Acceso de Seguridad">
+  <!-- Pantalla de Inicio de Sesión (Login) -->
+  <div id="auth-lock-screen" class="auth-lock-screen" role="dialog" aria-modal="true" aria-label="Iniciar Sesión">
     <div class="auth-card">
       <div class="auth-brand-badge">
         <div class="brand-symbol large">
-          <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="44" height="44" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <linearGradient id="authApertureGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stop-color="#38bdf8"/>
@@ -50,44 +50,41 @@
       </div>
 
       <div class="auth-header">
-        <h2 class="auth-title">AURA ANALYTICS</h2>
-        <div class="auth-security-pill">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          <span>ACCESO RESTRINGIDO</span>
-        </div>
-        <p class="auth-subtitle">Terminal de inteligencia ejecutiva protegida. Ingrese la contraseña de seguridad para iniciar sesión.</p>
+        <span class="auth-brand-tag">AURA</span>
+        <h2 class="auth-title">Iniciar Sesión</h2>
+        <p class="auth-subtitle">Introduce tu contraseña para acceder al asistente</p>
       </div>
 
       <form id="auth-password-form" class="auth-form" autocomplete="off">
-        <div class="auth-input-container">
-          <div class="auth-input-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
+        <div class="auth-field-group">
+          <label class="auth-field-label" for="auth-password-input">Contraseña</label>
+          <div class="auth-input-container">
+            <div class="auth-input-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <input 
+              type="password" 
+              id="auth-password-input" 
+              class="auth-input" 
+              placeholder="Escribe tu contraseña..." 
+              autocomplete="current-password"
+              required
+              autofocus
+            />
+            <button type="button" id="auth-toggle-visibility" class="auth-toggle-btn" aria-label="Mostrar contraseña" title="Mostrar u ocultar contraseña">
+              <svg class="icon-eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg class="icon-eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
           </div>
-          <input 
-            type="password" 
-            id="auth-password-input" 
-            class="auth-input" 
-            placeholder="Ingrese la contraseña..." 
-            autocomplete="current-password"
-            required
-            autofocus
-          />
-          <button type="button" id="auth-toggle-visibility" class="auth-toggle-btn" aria-label="Mostrar contraseña" title="Mostrar/Ocultar contraseña">
-            <svg class="icon-eye-show" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            <svg class="icon-eye-hide" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-            </svg>
-          </button>
         </div>
 
         <div id="auth-error-msg" class="auth-error-banner hidden" role="alert"></div>
@@ -96,24 +93,19 @@
           <label class="auth-remember-label">
             <input type="checkbox" id="auth-remember-checkbox" checked />
             <span class="custom-checkbox-indicator"></span>
-            <span>Recordar sesión en este dispositivo</span>
+            <span>Recordar sesión</span>
           </label>
         </div>
 
         <button type="submit" id="auth-submit-btn" class="auth-submit-btn">
           <span class="btn-spinner hidden"></span>
-          <span class="btn-label">Desbloquear Terminal</span>
+          <span class="btn-label">Iniciar Sesión</span>
           <svg class="btn-arrow-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
           </svg>
         </button>
       </form>
-
-      <div class="auth-footer">
-        <span class="auth-status-dot"></span>
-        <span>Cifrado de Sesión Activo • Motor BiDi Conectado</span>
-      </div>
     </div>
   </div>
 
@@ -145,10 +137,11 @@
 
     <!-- Nav Actions -->
     <div class="nav-actions">
-      <button class="nav-btn icon-btn-nav" id="btn-lock-session" title="Bloquear Terminal / Cerrar Sesión" aria-label="Bloquear Terminal">
+      <button class="nav-btn icon-btn-nav" id="btn-lock-session" title="Cerrar sesión" aria-label="Cerrar sesión">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
         </svg>
       </button>
       <button class="nav-btn icon-btn-nav" id="btn-open-settings" title="Configuración y Datasets" aria-label="Abrir Configuración y Datasets">
@@ -448,11 +441,11 @@
 
           <div class="config-row" style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; gap: 16px;">
             <div>
-              <div class="config-label" style="margin-bottom: 2px;">Seguridad de la Terminal</div>
-              <div style="font-size: 0.8rem; color: var(--text-muted);">Bloquear la sesión de análisis en este dispositivo</div>
+              <div class="config-label" style="margin-bottom: 2px;">Sesión y Acceso</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Cerrar la sesión activa en este dispositivo</div>
             </div>
             <button type="button" class="action-outline-btn" id="btn-lock-session-modal" style="padding: 8px 14px; font-size: 0.82rem; border-color: rgba(244, 63, 94, 0.4); color: var(--accent-rose);">
-              <span>Bloquear Terminal</span>
+              <span>Cerrar Sesión</span>
             </button>
           </div>
         </div>
