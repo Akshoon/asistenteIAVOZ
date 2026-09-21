@@ -48,85 +48,84 @@ npm run cap:open:ios
 
 ---
 
-## 🚀 Convivencia con más servicios en tu Servidor (con nip.io y HTTPS)
+## 🚀 Despliegue en el Servidor (junto a GeoIgnis y OpenGym en nip.io)
 
-Si ya tienes otros servicios funcionando en tu servidor con `nip.io` (ej. `app.<IP>.nip.io`, `api.<IP>.nip.io`), a este asistente le asignamos el subdominio:
-
-```text
-aura.<TU_IP_PUBLICA>.nip.io
-```
-
-*Cualquier subdominio antes de la IP en `nip.io` resuelve automáticamente a tu mismo servidor.*
+Siguiendo la misma arquitectura que ya tienes en tu servidor Ubuntu con **Caddy**:
+* **OpenGym**: Corriendo en `8080`
+* **GeoIgnis**: Corriendo en `geoignis.148-116-106-10.nip.io` (puerto `8085`)
+* **Aura (Asistente de Voz)**: Le asignamos el puerto local **`8088`** y el subdominio:
+  ```text
+  aura.148-116-106-10.nip.io
+  ```
 
 ---
 
-### Opción A: Despliegue con Docker (Recomendado junto a tus otros servicios)
+### PASO 1: Clonar y levantar en tu servidor
 
-1. En tu servidor, clona o actualiza el repositorio:
+1. En tu servidor (en `/home/ubuntu`):
    ```bash
+   cd /home/ubuntu
    git clone https://github.com/Akshoon/asistenteIAVOZ.git
    cd asistenteIAVOZ
    ```
 
-2. Configura tu `.env`:
+2. Crea tu archivo `.env`:
    ```bash
    cp .env.example .env
    nano .env
    ```
-   *Si el puerto 3000 ya lo usa otro de tus contenedores, puedes definir `AURA_PORT=3005` (o el que tengas libre).*
+   *Coloca tu `GEMINI_API_KEY` y revisa que `AURA_PORT=8088`.*
 
-3. Levanta el contenedor:
+3. Levanta el contenedor con Docker Compose:
    ```bash
    docker compose up -d --build
    ```
-   *Esto iniciará el contenedor `aura-voice-app` escuchando internamente en `127.0.0.1:3000` (o el `AURA_PORT` que hayas elegido).*
+   *El contenedor `aura-voice-app` quedará corriendo en segundo plano y escuchando en `127.0.0.1:8088`.*
 
-4. **Conéctalo a tu Nginx o Proxy inverso existente:**
-   Agrega una configuración de servidor virtual para `aura.<TU_IP>.nip.io` (ver siguiente sección).
+4. Verifica que responda localmente:
+   ```bash
+   curl -I http://127.0.0.1:8088
+   ```
+   *(Debe responder `HTTP/1.1 200 OK`)*
 
 ---
 
-### Opción B: Integración en tu Nginx existente
+### PASO 2: Agregar el subdominio a Caddy
 
-Si ya tienes Nginx como proxy inverso para tus otros servicios:
-
-1. **Crea la configuración para Aura:**
+1. Abre tu Caddyfile en el servidor:
    ```bash
-   sudo nano /etc/nginx/sites-available/aura
+   sudo nano /etc/caddy/Caddyfile
    ```
 
-2. **Pega la configuración apuntando al subdominio `aura.<TU_IP>.nip.io`:**
-   ```nginx
-   server {
-       server_name aura.TU_IP_PUBLICA.nip.io;
-
-       location / {
-           # Cambia 3000 si usaste otro AURA_PORT
-           proxy_pass http://127.0.0.1:3000;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection "upgrade";
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-
-           # Tiempos de espera para sesiones de audio en tiempo real
-           proxy_read_timeout 86400s;
-           proxy_send_timeout 86400s;
-       }
+2. Verás los bloques que ya tienes para OpenGym y GeoIgnis. Al final, agrega este bloque:
+   ```caddyfile
+   aura.148-116-106-10.nip.io {
+       reverse_proxy 127.0.0.1:8088
    }
    ```
+   *(Guarda con `Ctrl + O`, `Enter` y sal con `Ctrl + X`)*.
 
-3. **Habilita el sitio y genera el certificado SSL con Certbot:**
+3. Verifica la configuración de Caddy:
    ```bash
-   sudo ln -s /etc/nginx/sites-available/aura /etc/nginx/sites-enabled/
-   sudo nginx -t && sudo systemctl reload nginx
-   sudo certbot --nginx -d aura.TU_IP_PUBLICA.nip.io
+   caddy validate --config /etc/caddy/Caddyfile
    ```
 
-4. **Listo para usar:**
-   Ingresa desde cualquier navegador a:
-   **`https://aura.TU_IP_PUBLICA.nip.io`**
+4. Aplica los cambios en Caddy:
+   ```bash
+   sudo systemctl reload caddy
+   ```
+
+---
+
+### PASO 3: Acceder con HTTPS y Probar
+
+Abre en tu navegador o celular:
+👉 **`https://aura.148-116-106-10.nip.io`**
+
+Ingresa con tu contraseña de seguridad:
+```text
+Aura-Shield-2026!
+```
+
 
 

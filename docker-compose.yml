@@ -8,8 +8,8 @@ services:
     env_file:
       - .env
     ports:
-      # Expone el puerto en localhost para que tu Nginx/Caddy principal lo redirija bajo aura.<IP>.nip.io
-      - "127.0.0.1:${AURA_PORT:-3000}:3000"
+      # Expone en localhost en el puerto 8088 (junto a OpenGym en 8080 y GeoIgnis en 8085)
+      - "127.0.0.1:${AURA_PORT:-8088}:3000"
     volumes:
       - uploads_data:/app/server/uploads
 
